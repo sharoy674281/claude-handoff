@@ -1,0 +1,6 @@
+{
+  "name": "handoff",
+  "version": "1.0.0",
+  "description": "Export and share Claude Code conversation context for project handoffs",
+  "type": "module"
+}

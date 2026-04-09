@@ -9,7 +9,7 @@
       "name": "handoff",
       "description": "Export and share Claude Code conversation context for project handoffs. Provides /handoff:export, /handoff:import, /handoff:list, and /handoff:summary commands.",
       "category": "development",
-      "source": "."
+      "source": "./plugins/handoff"
     }
   ]
 }
