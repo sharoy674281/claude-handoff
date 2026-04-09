@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/Rakhm/.claude/plugins/marketplaces/**)",
+      "Read(//c/Users/Rakhm/.claude/**)",
+      "Bash(mkdir -p \"C:/Users/Rakhm/.claude/plugins/cache/claude-plugins-official/handoff\")",
+      "Bash(cmd /c 'mklink /J \"C:\\\\Users\\\\Rakhm\\\\.claude\\\\plugins\\\\cache\\\\claude-plugins-official\\\\handoff\\\\1.0.0\" \"C:\\\\Users\\\\Rakhm\\\\Desktop\\\\claude-continue\\\\handoff\"')",
+      "Bash(cmd.exe /c \"mklink /J 1.0.0 C:\\\\Users\\\\Rakhm\\\\Desktop\\\\claude-continue\\\\handoff\")",
+      "Bash(cp:*)",
+      "Bash(mkdir -p \"C:/Users/Rakhm/.claude/plugins/marketplaces/handoff-local/plugins/handoff\")",
+      "Bash(cp -r \"C:/Users/Rakhm/Desktop/claude-continue/handoff/.\" \"C:/Users/Rakhm/.claude/plugins/marketplaces/handoff-local/plugins/handoff/\")",
+      "Bash(mkdir -p \"C:/Users/Rakhm/.claude/plugins/cache/handoff-local/handoff/1.0.0\")",
+      "Bash(cp -r \"C:/Users/Rakhm/Desktop/claude-continue/handoff/.\" \"C:/Users/Rakhm/.claude/plugins/cache/handoff-local/handoff/1.0.0/\")",
+      "Bash(cp -r \"C:/Users/Rakhm/Desktop/claude-continue/handoff/.claude-plugin\" \"C:/Users/Rakhm/.claude/plugins/cache/handoff-local/handoff/1.0.0/.claude-plugin\")",
+      "Bash(python3:*)",
+      "Bash(awk '{print $1}')",
+      "Bash(cp \"C:/Users/Rakhm/Desktop/claude-continue/handoff/scripts/parse_session.py\" \"C:/Users/Rakhm/.claude/plugins/cache/handoff-local/handoff/1.0.0/scripts/parse_session.py\")",
+      "Bash(cp \"C:/Users/Rakhm/Desktop/claude-continue/handoff/skills/list/SKILL.md\" \"C:/Users/Rakhm/.claude/plugins/cache/handoff-local/handoff/1.0.0/skills/list/SKILL.md\")",
+      "Bash(cp \"C:/Users/Rakhm/Desktop/claude-continue/handoff/skills/import/SKILL.md\" \"C:/Users/Rakhm/.claude/plugins/cache/handoff-local/handoff/1.0.0/skills/import/SKILL.md\")",
+      "Bash(rm \"C:/Users/Rakhm/.claude/projects/C--Users-Rakhm-Desktop-claude-continue-handoff/edb833b1-1e08-4f7a-9ddf-4c9c2bfadcf4.jsonl\")"
+    ]
+  }
+}

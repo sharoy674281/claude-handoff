@@ -11,6 +11,7 @@ import os
 import re
 import subprocess
 import sys
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -202,7 +203,10 @@ def extract_metadata(jsonl_path: str) -> dict:
                 content = entry.get("message", {}).get("content", "")
                 text = _content_text(content).strip()
                 if text and not any(text.startswith(p) for p in _SKIP_PREFIXES):
-                    first_message = text[:120]
+                    # Skip command-like messages (e.g. "/reload-plugins")
+                    # and very short messages to find the real first question
+                    if not text.startswith("/") and len(text) > 10:
+                        first_message = text[:120]
 
     return {
         "exported_by": exported_by,
@@ -403,6 +407,133 @@ def export_all_sessions(
     return output_path
 
 
+def import_handoff_to_session(
+    handoff_path: str,
+    project_path: str,
+    claude_dir: str = None,
+) -> str:
+    """Convert a handoff markdown file into a JSONL session file.
+
+    This creates a synthetic session that shows up in /resume.
+
+    Args:
+        handoff_path: Path to the handoff markdown file.
+        project_path: Filesystem path to the target project.
+        claude_dir: Override for ~/.claude (testing).
+
+    Returns:
+        Path to the created JSONL session file.
+    """
+    if claude_dir is None:
+        claude_dir = os.path.join(Path.home(), ".claude")
+
+    # Read the handoff file
+    with open(handoff_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # Parse YAML frontmatter
+    meta = {}
+    if content.startswith("---"):
+        end = content.index("---", 3)
+        frontmatter = content[3:end].strip()
+        for line in frontmatter.split("\n"):
+            if ":" in line:
+                key, val = line.split(":", 1)
+                meta[key.strip()] = val.strip().strip('"')
+        content = content[end + 3:].strip()
+
+    # Parse messages from markdown
+    messages = []
+    blocks = re.split(r"\n---\n", content)
+    for block in blocks:
+        block = block.strip()
+        if not block:
+            continue
+
+        role = None
+        timestamp = None
+        text = ""
+
+        lines = block.split("\n")
+        for i, line in enumerate(lines):
+            if line.startswith("**User:**"):
+                role = "user"
+            elif line.startswith("**Claude:**"):
+                role = "assistant"
+            elif line.startswith("*") and line.endswith("*") and "UTC" in line:
+                # Parse timestamp like *2026-04-09 18:18:37 UTC*
+                ts_str = line.strip("*").strip()
+                try:
+                    dt = datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S %Z")
+                    timestamp = dt.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+                except ValueError:
+                    timestamp = datetime.now(timezone.utc).isoformat()
+            elif role is not None:
+                text += line + "\n"
+
+        if role and text.strip():
+            messages.append({
+                "role": role,
+                "content": text.strip(),
+                "timestamp": timestamp or datetime.now(timezone.utc).isoformat(),
+            })
+
+    if not messages:
+        print("No messages found in handoff file.", file=sys.stderr)
+        return ""
+
+    # Generate session ID and build JSONL
+    session_id = str(uuid.uuid4())
+    dir_name = _path_to_dirname(project_path)
+    session_dir = os.path.join(claude_dir, "projects", dir_name)
+    os.makedirs(session_dir, exist_ok=True)
+
+    jsonl_path = os.path.join(session_dir, f"{session_id}.jsonl")
+    branch = meta.get("branch", "main")
+    exported_by = meta.get("exported_by", "unknown")
+
+    with open(jsonl_path, "w", encoding="utf-8") as f:
+        # Write permission mode entry
+        f.write(json.dumps({
+            "type": "permission-mode",
+            "permissionMode": "default",
+            "sessionId": session_id,
+        }) + "\n")
+
+        prev_uuid = None
+        for msg in messages:
+            msg_uuid = str(uuid.uuid4())
+            # Content must be an array of blocks for both roles
+            content_blocks = [{"type": "text", "text": msg["content"]}]
+
+            entry = {
+                "parentUuid": prev_uuid,
+                "isSidechain": False,
+                "type": msg["role"],
+                "message": {
+                    "role": msg["role"],
+                    "content": content_blocks,
+                },
+                "uuid": msg_uuid,
+                "timestamp": msg["timestamp"],
+                "sessionId": session_id,
+                "cwd": project_path,
+                "gitBranch": branch,
+            }
+            if msg["role"] == "user":
+                entry["userType"] = "external"
+                entry["entrypoint"] = "cli"
+            if msg["role"] == "assistant":
+                entry["message"]["model"] = "claude-opus-4-6"
+                entry["message"]["type"] = "message"
+                entry["message"]["id"] = f"msg_{uuid.uuid4().hex[:24]}"
+
+            f.write(json.dumps(entry) + "\n")
+            prev_uuid = msg_uuid
+
+    return jsonl_path
+
+
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
@@ -431,11 +562,30 @@ def main():
         "--output", default=None,
         help="Output directory (defaults to cwd).",
     )
+    parser.add_argument(
+        "--import-handoff", default=None, dest="import_handoff",
+        help="Import a handoff markdown file as a resumable session.",
+    )
 
     args = parser.parse_args()
     output_dir = args.output or os.getcwd()
 
-    if args.file:
+    if args.import_handoff:
+        # Import a handoff file as a session
+        handoff_file = args.import_handoff
+        if not os.path.isfile(handoff_file):
+            print(f"Handoff file not found: {handoff_file}", file=sys.stderr)
+            sys.exit(1)
+        project = args.project or os.getcwd()
+        jsonl_path = import_handoff_to_session(handoff_file, project)
+        if jsonl_path:
+            print(f"Imported as session: {jsonl_path}")
+            print(f"This handoff will now appear in /resume")
+        else:
+            print("Import failed.", file=sys.stderr)
+            sys.exit(1)
+
+    elif args.file:
         # Export a specific file
         if not os.path.isfile(args.file):
             print(f"File not found: {args.file}", file=sys.stderr)
