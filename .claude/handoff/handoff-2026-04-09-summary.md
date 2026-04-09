@@ -8,50 +8,49 @@ type: summary
 
 ## What was built/worked on
 
-Set up the "handoff" Claude Code plugin for global installation and use. The plugin lets developers export, import, list, and summarize conversation history for project handoffs.
+Built the "handoff" Claude Code plugin from scratch — a tool that lets developers export, import, list, and summarize conversation context for project handoffs.
 
 ## Key decisions
 
-- **Local marketplace**: Created a custom `handoff-local` marketplace instead of submitting to the official one. This enables local dev/testing while mirroring the real plugin install system.
-- **Commands + Skills separation**: Plugins need `commands/*.md` for user-facing slash commands and `skills/*/SKILL.md` for AI-invocable logic. Both are required for a fully working plugin.
-- **Cache-based install**: The plugin lives in `~/.claude/plugins/cache/handoff-local/handoff/1.0.0/` — Claude Code only loads plugins from the `cache/` directory, not directly from `marketplaces/`.
-- **Smarter first_message**: Updated the parser to skip `/` commands and short messages, picking the first real user question as the topic for handoff listings.
+- **Local marketplace for dev, GitHub for distribution**: Used a local marketplace (`handoff-local`) for development, then set up the GitHub repo as a proper marketplace so others can install via `/plugin marketplace add https://github.com/sharoy674281/claude-handoff.git`
+- **Commands + Skills**: Plugins need both `commands/*.md` (user-facing slash commands) and `skills/*/SKILL.md` (AI logic). Commands are what show up in autocomplete; skills are what the AI references.
+- **Dynamic script paths**: Commands use `find` to locate `parse_session.py` instead of hardcoding paths, so it works on any machine regardless of install location.
+- **Auto commit+push on export**: `/handoff:export` automatically commits and pushes handoff files so the other dev just needs to `git pull`.
+- **Resume integration**: Imported handoffs get converted to JSONL and injected into `~/.claude/projects/` so they appear in `/resume`.
 
 ## How things work
 
-- **Global install** requires three config files:
-  - `known_marketplaces.json` — registers the `handoff-local` marketplace
-  - `installed_plugins.json` — points to cached plugin path with version
-  - `settings.json` — enables `handoff@handoff-local`
-- **Slash commands** (`/handoff:export`, `/handoff:import`, `/handoff:list`, `/handoff:summary`) are defined in `commands/*.md` and trigger skills via the Skill tool.
-- **Export flow**: `parse_session.py` reads JSONL session files from `~/.claude/projects/`, filters system messages, and outputs clean markdown with YAML frontmatter.
+- **Export**: `parse_session.py` reads JSONL session files from `~/.claude/projects/`, filters system messages, and outputs clean markdown with YAML frontmatter. The AI then generates a summary. Both files get committed and pushed.
+- **Import**: Reads handoff markdown, shows preview, registers it as a synthetic JSONL session for `/resume`, and loads the summary into context.
+- **Plugin install**: Three config files control global plugin loading: `known_marketplaces.json`, `installed_plugins.json`, and `settings.json`. The plugin cache lives at `~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/`.
+- **Distribution**: The repo acts as its own marketplace via `.claude-plugin/marketplace.json`, with the actual plugin in `plugins/handoff/`.
 
 ## Known issues and gotchas
 
-- **Copy, not symlink**: Windows junction creation failed from bash. The global install is a copy of the source. After editing source files, you must re-copy to `~/.claude/plugins/cache/handoff-local/handoff/1.0.0/`.
-- **Marketplace validation**: Can't fake plugins into `claude-plugins-official` — Claude Code validates against the marketplace's `marketplace.json` index.
-- **Plugin count quirk**: The "skills" count in `/reload-plugins` counts `commands/` files, not `skills/` directories.
+- **Manual sync for local dev**: The global install is a copy, not a symlink (Windows junction failed from bash). After editing source files, re-copy to the cache directory.
+- **Content must be arrays**: JSONL session files need `message.content` as an array of blocks (`[{"type": "text", "text": "..."}]`), not plain strings — Claude Code crashes otherwise.
+- **Marketplace source format**: `known_marketplaces.json` requires `"source": "github"` or `"source": "git"` — `"source": "local"` is invalid and corrupts the plugin system.
 
 ## What's done vs. what's left
 
 **Done:**
-- Plugin loads globally (3 plugins, 7 skills, no errors)
-- All 4 slash commands work: `/handoff:export`, `/handoff:import`, `/handoff:list`, `/handoff:summary`
-- Session parser exports conversations to clean markdown
-- List output shows topic, author, date, branch, message count, size, and summary status
-- Improved first_message detection skips commands and short messages
+- All 4 commands working globally: `/handoff:export`, `/handoff:import`, `/handoff:list`, `/handoff:summary`
+- GitHub distribution via marketplace — others can install with one command
+- Auto commit+push on export
+- `/resume` integration for imported handoffs
+- Dynamic script paths for cross-machine compatibility
+- Clean commit messages without co-authored-by
 
 **Left:**
-- GitHub-based distribution so others can install via marketplace
-- Automate sync from source to cache (fix symlink or add a sync script)
-- Test `/handoff:import` end-to-end
-- Test plugin in a different project directory to confirm global availability
+- Test full install flow on a fresh machine
+- Test multi-handoff numbered picker
+- Consider adding to the official Claude Code marketplace for wider visibility
 
 ## Important files
 
-- `scripts/parse_session.py` — Core JSONL session parser and markdown exporter
-- `.claude-plugin/plugin.json` — Plugin metadata (name, version, description)
-- `skills/*/SKILL.md` — AI-facing skill definitions (export, import, list, summary)
-- `commands/*.md` — User-facing slash command definitions
-- `hooks/session-start.sh` — Session start hook
-- `package.json` — NPM-style metadata
+- `scripts/parse_session.py` — Core parser: JSONL → markdown export, markdown → JSONL import
+- `.claude-plugin/marketplace.json` — Marketplace index for distribution
+- `.claude-plugin/plugin.json` — Plugin metadata
+- `plugins/handoff/` — Distributable copy of the plugin (used by marketplace installs)
+- `commands/*.md` — User-facing slash commands with full instructions
+- `skills/*/SKILL.md` — AI-facing skill definitions
