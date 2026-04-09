@@ -17,7 +17,8 @@
       "Bash(cp \"C:/Users/Rakhm/Desktop/claude-continue/handoff/scripts/parse_session.py\" \"C:/Users/Rakhm/.claude/plugins/cache/handoff-local/handoff/1.0.0/scripts/parse_session.py\")",
       "Bash(cp \"C:/Users/Rakhm/Desktop/claude-continue/handoff/skills/list/SKILL.md\" \"C:/Users/Rakhm/.claude/plugins/cache/handoff-local/handoff/1.0.0/skills/list/SKILL.md\")",
       "Bash(cp \"C:/Users/Rakhm/Desktop/claude-continue/handoff/skills/import/SKILL.md\" \"C:/Users/Rakhm/.claude/plugins/cache/handoff-local/handoff/1.0.0/skills/import/SKILL.md\")",
-      "Bash(rm \"C:/Users/Rakhm/.claude/projects/C--Users-Rakhm-Desktop-claude-continue-handoff/edb833b1-1e08-4f7a-9ddf-4c9c2bfadcf4.jsonl\")"
+      "Bash(rm \"C:/Users/Rakhm/.claude/projects/C--Users-Rakhm-Desktop-claude-continue-handoff/edb833b1-1e08-4f7a-9ddf-4c9c2bfadcf4.jsonl\")",
+      "Bash(git:*)"
     ]
   }
 }

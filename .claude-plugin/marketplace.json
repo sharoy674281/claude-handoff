@@ -1,0 +1,15 @@
+{
+  "name": "claude-handoff",
+  "description": "Marketplace for the handoff plugin — export and share Claude Code conversation context for project handoffs",
+  "owner": {
+    "name": "Rakhm"
+  },
+  "plugins": [
+    {
+      "name": "handoff",
+      "description": "Export and share Claude Code conversation context for project handoffs. Provides /handoff:export, /handoff:import, /handoff:list, and /handoff:summary commands.",
+      "category": "development",
+      "source": "."
+    }
+  ]
+}
