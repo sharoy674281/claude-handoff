@@ -51,10 +51,18 @@ Handoff from [exported_by] ([date])
 
 ### 4. Register as Resumable Session
 
-Run this to make the handoff appear in `/resume`:
+Find the parser script:
 
 ```bash
-python3 "$HOME/.claude/plugins/cache/handoff-local/handoff/1.0.0/scripts/parse_session.py" --import-handoff "<handoff-file>" --project "$(pwd)"
+find "$HOME/.claude/plugins" -name "parse_session.py" -path "*/handoff/*/scripts/*" 2>/dev/null | head -1
+```
+
+If not found, check the current project: `find . -name "parse_session.py" -path "*/scripts/*" 2>/dev/null | head -1`
+
+Run it to register the handoff as a resumable `/resume` session:
+
+```bash
+python3 "<script-path>" --import-handoff "<handoff-file>" --project "$(pwd)"
 ```
 
 ### 5. Load Context

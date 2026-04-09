@@ -8,19 +8,35 @@ Export the current conversation so another developer can import it and continue 
 
 ## Steps
 
-### 1. Export Session
+### 1. Find the Parser Script
 
-Run this command to export the latest session:
+Find the parse_session.py script. Search for it:
 
 ```bash
-python3 "$HOME/.claude/plugins/cache/handoff-local/handoff/1.0.0/scripts/parse_session.py" --project "$(pwd)" --output ".claude/handoff"
+find "$HOME/.claude/plugins" -name "parse_session.py" -path "*/handoff/*/scripts/*" 2>/dev/null | head -1
+```
+
+If not found there, check the current project directory:
+
+```bash
+find . -name "parse_session.py" -path "*/scripts/*" 2>/dev/null | head -1
+```
+
+Use whichever path is found for the next steps.
+
+### 2. Export Session
+
+Run the parser script:
+
+```bash
+python3 "<script-path>" --project "$(pwd)" --output ".claude/handoff"
 ```
 
 If the user passed `--all`, add the `--all` flag.
 If the user passed `--full`, add the `--full` flag.
 If the user passed `--local`, skip the commit and push step.
 
-### 2. Generate Summary
+### 3. Generate Summary
 
 Read the exported markdown file from `.claude/handoff/handoff-<date>.md` and generate a summary. Save it as `handoff-<date>-summary.md` in the same directory.
 
@@ -32,7 +48,7 @@ The summary should include:
 - **What's done vs. what's left** — status of the work
 - **Important files** — key files and what they do
 
-### 3. Report Results
+### 4. Report Results
 
 Tell the user:
 
@@ -43,7 +59,7 @@ Export complete!
   Sessions: [N] · Messages: [N] · Size: [N]KB
 ```
 
-### 4. Commit and Push
+### 5. Commit and Push
 
 Unless the user passed `--local` (keep local only), automatically commit and push in a single command:
 
@@ -54,7 +70,6 @@ git add .claude/handoff/ && git commit --no-verify -m "handoff: <short descripti
 The commit message should be short and descriptive, like:
 - `handoff: auth system setup and API routes`
 - `handoff: bug fix for payment flow`
-- `handoff: initial project scaffolding`
 
 Do NOT add Co-Authored-By lines. Keep it clean.
 

@@ -12,12 +12,18 @@ Check `.claude/handoff/` for the most recent `handoff-*-summary.md` file. If fou
 
 Generate one from current sessions:
 
-1. Run the parser:
+1. Find the parser script:
 ```bash
-python3 "$HOME/.claude/plugins/cache/handoff-local/handoff/1.0.0/scripts/parse_session.py" --project "$(pwd)" --output ".claude/handoff"
+find "$HOME/.claude/plugins" -name "parse_session.py" -path "*/handoff/*/scripts/*" 2>/dev/null | head -1
+```
+If not found, check current project: `find . -name "parse_session.py" -path "*/scripts/*" 2>/dev/null | head -1`
+
+2. Run it:
+```bash
+python3 "<script-path>" --project "$(pwd)" --output ".claude/handoff"
 ```
 
-2. Read the exported conversation and generate a summary with these sections:
+3. Read the exported conversation and generate a summary with these sections:
    - **What was built/worked on**
    - **Key decisions and reasoning**
    - **How key systems work**
@@ -25,6 +31,6 @@ python3 "$HOME/.claude/plugins/cache/handoff-local/handoff/1.0.0/scripts/parse_s
    - **What's done vs. what's left**
    - **Important files and their purposes**
 
-3. Save as `handoff-<date>-summary.md` in `.claude/handoff/`
+4. Save as `handoff-<date>-summary.md` in `.claude/handoff/`
 
-4. Display the summary.
+5. Display the summary.
